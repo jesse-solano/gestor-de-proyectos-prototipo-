@@ -1,0 +1,44 @@
+<!-- Extiende la plantilla base ubicada en 'admin_user/base.html' -->
+{% extends "admin_user/base.html" %}
+
+<!-- Bloque de contenido principal -->
+{% block content %}
+
+<!-- Incluye la barra lateral ubicada en 'admin_user/sidebar.html' -->
+{% include "admin_user/sidebar.html" %}
+
+<!-- Contenedor principal para el contenido de la página, con margen izquierdo para acomodar la barra lateral -->
+<div class="container">
+    <div class="content" style="margin-left: 300px; padding-top: 20px;">
+        <!-- Título de la sección de proyectos -->
+        <h1>My Projects</h1>
+        
+        <!-- Tabla para mostrar la lista de proyectos -->
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <!-- Encabezados de la tabla -->
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Itera sobre la lista de proyectos y muestra su información -->
+                {% for project in projects %}
+                <tr>
+                    <td>{{ project.id }}</td>
+                    <td>{{ project.name }}</td>
+                    <td>
+                        <!-- Enlace para editar el proyecto, utilizando su ID en la URL -->
+                        <a href="{% url 'edit_project' project.id %}" class="btn btn-primary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Cierra el bloque de contenido principal -->
+{% endblock %}

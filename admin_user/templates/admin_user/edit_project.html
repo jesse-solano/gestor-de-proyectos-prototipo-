@@ -1,0 +1,89 @@
+{% extends "admin_user/base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<!-- Incluye la barra lateral -->
+{% include 'admin_user/sidebar.html' %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <!-- Encabezado de la tarjeta con estilo de fondo y texto -->
+                <div class="card-header bg-primary text-white">
+                    Editar Proyecto
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para editar el proyecto -->
+                    <form method="POST" action="{% url 'edit_project' project.id %}">
+                        <!-- Token CSRF para la protección contra ataques CSRF -->
+                        {% csrf_token %}
+                        <!-- Campo de entrada para el nombre del proyecto -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre del Proyecto</label>
+                            {{ form.name|add_class:"form-control" }}
+                        </div>
+                        <!-- Campo de entrada para la descripción del proyecto -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            {{ form.description|add_class:"form-control" }}
+                        </div>
+                        <!-- Campo de selección para la fase del proyecto -->
+                        <div class="mb-3">
+                            <label for="phase" class="form-label">Fase</label>
+                            {{ form.phase|add_class:"form-select" }}
+                        </div>
+                        <!-- Campo de selección para el estado del proyecto -->
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Estado</label>
+                            {{ form.status|add_class:"form-select" }}
+                        </div>
+                        <!-- Campo de selección para el estatus del proyecto -->
+                        <div class="mb-3">
+                            <label for="estatus" class="form-label">Estatus</label>
+                            {{ form.estatus|add_class:"form-select" }}
+                        </div>
+                        <!-- Campo de selección para el usuario asignado al proyecto -->
+                        <div class="mb-3">
+                            <label for="assigned_user" class="form-label">Usuario Asignado</label>
+                            {{ form.assigned_user|add_class:"form-select" }}
+                        </div>
+                        <!-- Campo de entrada para el porcentaje real del proyecto -->
+                        <div class="mb-3">
+                            <label for="real_percentage" class="form-label">Porcentaje Real</label>
+                            {{ form.real_percentage|add_class:"form-control" }}
+                            <small class="form-text text-muted">Solo se permiten números y el símbolo %.</small>
+                        </div>
+                        <!-- Campo de entrada para el porcentaje planeado del proyecto -->
+                        <div class="mb-3">
+                            <label for="planned_percentage" class="form-label">Porcentaje Planeado</label>
+                            {{ form.planned_percentage|add_class:"form-control" }}
+                            <small class="form-text text-muted">Solo se permiten números y el símbolo %.</small>
+                        </div>
+                        <!-- Campo de entrada para la desviación del proyecto -->
+                        <div class="mb-3">
+                            <label for="deviation" class="form-label">Desviación</label>
+                            {{ form.deviation|add_class:"form-control" }}
+                        </div>
+                        <!-- Botón para guardar los cambios -->
+                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                        <!-- Botón para cancelar y volver a la lista de proyectos del usuario -->
+                        <a href="{% url 'user_project_list' %}" class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Agrega un event listener para asegurar que solo se permitan números y el símbolo % en los campos real_percentage y planned_percentage
+    document.getElementById('{{ form.real_percentage.id_for_label }}').addEventListener('input', function (e) {
+        var input = e.target.value;
+        e.target.value = input.replace(/[^0-9%]/g, '');
+    });
+    document.getElementById('{{ form.planned_percentage.id_for_label }}').addEventListener('input', function (e) {
+        var input = e.target.value;
+        e.target.value = input.replace(/[^0-9%]/g, '');
+    });
+</script>
+{% endblock %}

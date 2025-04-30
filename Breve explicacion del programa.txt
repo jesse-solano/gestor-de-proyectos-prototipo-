@@ -1,0 +1,116 @@
+# Gestor de Proyectos con Login
+
+Este documento describe los diferentes apartados y funcionalidades del gestor de proyectos con login. El sistema está diseñado para permitir a los usuarios gestionar proyectos de manera eficiente, proporcionando una interfaz intuitiva y funcional. A continuación se detallan los principales componentes y su funcionamiento.
+
+## 1. Plantilla Base
+
+### Archivo: `admin_user/base.html`
+La plantilla base define la estructura general de la aplicación, incluyendo los elementos comunes como el encabezado, pie de página, y la barra de navegación. Todas las demás plantillas extienden esta plantilla base para mantener una coherencia en el diseño y la estructura.
+
+## 2. Barra Lateral
+
+### Archivo: `admin_user/sidebar.html`
+La barra lateral proporciona acceso rápido a las diferentes secciones del gestor de proyectos. Incluye enlaces a las vistas principales como "Home", "Modificar Proyectos" y "Reportes". También muestra opciones de autenticación (login/logout) dependiendo del estado del usuario.
+
+## 3. Vista de Lista de Proyectos
+
+### Archivo: `project_list.html`
+Esta vista muestra una lista de proyectos que el usuario puede gestionar. Incluye una tabla con los ID de los proyectos, nombres, y opciones para editar cada proyecto.
+
+## 4. Vista de Reportes
+
+### Archivo: `report.html`
+Esta vista permite a los usuarios filtrar y visualizar reportes de los proyectos. Incluye un formulario de filtros para seleccionar fase, estado, estatus, usuario, mes y año. Los resultados se muestran en una tabla y se complementan con gráficos estadísticos generados con Chart.js.
+
+## 5. Modelos
+
+### Archivo: `models.py`
+Este archivo define las estructuras de datos del proyecto a través de clases de modelo de Django. Cada clase representa una tabla en la base de datos y define los campos y relaciones necesarios para almacenar información sobre los proyectos, usuarios, fases, estados, y estatus.
+
+## 6. Rutas del Proyecto
+
+### Archivo: `urls.py` del proyecto
+Este archivo define las rutas globales del proyecto. Incluye las rutas principales que dirigen a las diferentes aplicaciones dentro del proyecto. También incluye configuraciones para servir archivos estáticos y de medios durante el desarrollo.
+
+## 7. Rutas de la Aplicación
+
+### Archivo: `urls.py` de la aplicación
+Cada aplicación dentro del proyecto tiene su propio archivo de rutas que define las URL específicas de esa aplicación. Este archivo incluye las rutas para las vistas de lista de proyectos, reportes, y cualquier otra funcionalidad específica de la aplicación.
+
+## 8. Formularios
+
+### Archivo: `forms.py`
+Este archivo define los formularios utilizados en la aplicación. Utiliza las clases de formulario de Django para crear y manejar formularios de entrada de datos, como los filtros en la vista de reportes.
+
+## 9. Vistas
+
+### Archivo: `views.py`
+Este archivo contiene las funciones y clases de vista que manejan las solicitudes HTTP y devuelven las respuestas adecuadas. Las vistas procesan los datos, interactúan con los modelos y renderizan las plantillas con los datos necesarios.
+
+## 10. Archivos Estáticos
+
+### Directorio: `static/`
+Este directorio contiene archivos estáticos como imágenes, CSS y JavaScript que se utilizan en la aplicación. Estos archivos se sirven directamente al navegador y no cambian en el servidor.
+
+## 11. Archivos de Plantillas
+
+### Directorio: `templates/`
+Este directorio contiene las plantillas HTML que se utilizan para renderizar las vistas. Las plantillas pueden extender la plantilla base y pueden incluir otras plantillas parciales para construir la interfaz de usuario completa.
+
+## 12. Archivo de Configuración
+
+### Archivo: `settings.py`
+Este archivo contiene todas las configuraciones del proyecto, incluyendo configuraciones de base de datos, aplicaciones instaladas, middleware, y configuraciones de archivos estáticos y de medios. También incluye configuraciones específicas para el entorno de desarrollo y producción.
+
+## 13. Gestión de Usuarios
+
+### Archivos: `login.html`, `logout.html`
+Estos archivos de plantilla manejan la interfaz de usuario para las funciones de login y logout. Permiten a los usuarios autenticarse en el sistema y cerrar sesión de manera segura.
+
+## 14. Dependencias del Proyecto (PIP)
+
+- Django: Framework principal utilizado para el desarrollo del proyecto.
+- djangorestframework: Biblioteca para construir APIs RESTful.
+- Pillow: Biblioteca para el manejo de imágenes.
+- psycopg2: Adaptador de base de datos PostgreSQL para Python.
+- django-widget-tweaks: Biblioteca para personalizar widgets de formularios en Django.
+- chart.js: Biblioteca para la generación de gráficos.
+
+## 15. Puesta en Marcha del Proyecto
+
+### Funciones de configuracion del proyecto y funciones para al puesta en marcha del proyecto
+
+**Crear y Activar un Entorno Virtual**:(cabe recalcar que el proyecto no lo hice con el entonrno virtual debido a que tuve problemas con el mismo y las migraciones)
+   Crea un entorno virtual para instalar las dependencias del proyecto.
+   ```sh
+   python -m venv env
+   source env/bin/activate   # En Windows usa `env\Scripts\activate`
+   ```
+
+**Instalar Dependencias**:
+   Instala las dependencias requeridas utilizando `pip`.
+   ```sh
+   pip install 
+
+**Configurar la Base de Datos**:
+   Aplica las migraciones para configurar la base de datos.
+   ```sh
+   python manage.py migrate
+   ```
+
+**Crear un Superusuario**:
+   Crea un superusuario para acceder al panel de administración de Django.
+   ```sh
+   python manage.py createsuperuser
+   ```
+
+
+**Iniciar el Servidor de Desarrollo**:
+   Inicia el servidor de desarrollo de Django.
+   ```sh
+   python manage.py runserver
+   ```
+
+**Acceder a la Aplicación**:
+   Abre un navegador web y navega a `http://127.0.0.1:8000/` para acceder a la aplicación. Usa las credenciales del superusuario para iniciar sesión en el panel de administración (`http://127.0.0.1:8000/admin/`).
+

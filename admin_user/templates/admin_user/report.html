@@ -1,0 +1,257 @@
+{% extends "admin_user/base.html" %} <!-- Extiende la plantilla base ubicada en 'admin_user/base.html' -->
+{% load widget_tweaks %} <!-- Carga la biblioteca de etiquetas 'widget_tweaks' para modificar widgets de formularios -->
+{% load custom_filters %} <!-- Carga la biblioteca de etiquetas 'custom_filters' para usar filtros personalizados -->
+
+{% block content %}
+<!-- Incluye la barra lateral -->
+{% include 'admin_user/sidebar.html' %}
+<div class="container mt-5">
+    <div class="content">
+        <!-- Título principal de la página -->
+        <h1 class="mb-4">Reportes de Proyectos</h1>
+        
+        <!-- Formulario de filtros para los reportes -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-2">
+                <label for="phase" class="form-label">Fase</label>
+                <!-- Campo de selección para la fase del proyecto -->
+                {{ filter_form.phase|add_class:'form-select' }}
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">Estado</label>
+                <!-- Campo de selección para el estado del proyecto -->
+                {{ filter_form.status|add_class:'form-select' }}
+            </div>
+            <div class="col-md-2">
+                <label for="estatus" class="form-label">Estatus</label>
+                <!-- Campo de selección para el estatus del proyecto -->
+                {{ filter_form.estatus|add_class:'form-select' }}
+            </div>
+            <div class="col-md-2">
+                <label for="user" class="form-label">Usuario</label>
+                <!-- Campo de selección para el usuario asignado al proyecto -->
+                {{ filter_form.user|add_class:'form-select' }}
+            </div>
+            <div class="col-md-1">
+                <label for="month" class="form-label">Mes</label>
+                <!-- Campo de selección para el mes -->
+                {{ filter_form.month|add_class:'form-select' }}
+            </div>
+            <div class="col-md-1">
+                <label for="year" class="form-label">Año</label>
+                <!-- Campo de selección para el año -->
+                {{ filter_form.year|add_class:'form-select' }}
+            </div>
+            <div class="col-md-2 align-self-end">
+                <!-- Botón para aplicar los filtros -->
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+        
+        <!-- Tabla de lista de proyectos -->
+        <h2 class="mb-4">Lista de Proyectos</h2>
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Porcentaje Real</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Itera sobre la lista de proyectos y muestra su información -->
+                {% for project in projects %}
+                <tr>
+                    <td>{{ project.id }}</td>
+                    <td>{{ project.name }}</td>
+                    <td>{{ project.real_percentage }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Resumen de datos -->
+        <h2 class="mb-4">Resumen de Datos</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Conteo de Fases</h4>
+                <ul class="list-group">
+                    <!-- Itera sobre los conteos de fases y muestra su información -->
+                    {% for phase in phase_counts %}
+                    <li class="list-group-item">{{ phase.phase }}: {{ phase.count }}</li>
+                    {% endfor %}
+                    <!-- Muestra el total de todas las fases -->
+                    <li class="list-group-item list-group-item-info">Total: {{ total_phase }}</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h4>Conteo de Estados</h4>
+                <ul class="list-group">
+                    <!-- Itera sobre los conteos de estados y muestra su información -->
+                    {% for status in status_counts %}
+                    <li class="list-group-item">{{ status.status }}: {{ status.count }}</li>
+                    {% endfor %}
+                    <!-- Muestra el total de todos los estados -->
+                    <li class="list-group-item list-group-item-info">Total: {{ total_status }}</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h4>Conteo de Estatus</h4>
+                <ul class="list-group">
+                    <!-- Itera sobre los conteos de estatus y muestra su información -->
+                    {% for estatus in estatus_counts %}
+                    <li class="list-group-item">{{ estatus.estatus }}: {{ estatus.count }}</li>
+                    {% endfor %}
+                    <!-- Muestra el total de todos los estatus -->
+                    <li class="list-group-item list-group-item-info">Total: {{ total_estatus }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Sección de estadísticas y gráficos -->
+        <h2 class="mb-4">Estadísticas</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Lienzo para el gráfico de barras -->
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <!-- Lienzo para el gráfico de pastel -->
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="col-md-12">
+                <!-- Lienzo para el gráfico de barras y líneas -->
+                <canvas id="barLineChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluye Chart.js para generar gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Datos para los gráficos
+    const phaseData = {
+        labels: ['Fase 1', 'Fase 2', 'Fase 3'],
+        datasets: [{
+            label: 'Conteo de Fases',
+            data: [
+                {% for phase in phase_counts %}
+                    {{ phase.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // Configuración y creación del gráfico de barras
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: phaseData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Configuración y creación del gráfico de pastel
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: phaseData,
+    });
+
+    // Datos para el gráfico de barras y líneas
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const phaseMonthData = {
+        labels: months,
+        datasets: [
+            {
+                label: 'Fase 1',
+                data: [
+                    {% for month in months %}
+                        {% with month|lower as month %}
+                            {% with month=phase_month_counts|dict_key:month %}
+                                {% if month %}
+                                    {{ month|get_phase_count:'Fase 1' }},
+                                {% else %}
+                                    0,
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                type: 'bar'
+            },
+            {
+                label: 'Fase 2',
+                data: [
+                    {% for month in months %}
+                        {% with month|lower as month %}
+                            {% with month=phase_month_counts|dict_key:month %}
+                                {% if month %}
+                                    {{ month|get_phase_count:'Fase 2' }},
+                                {% else %}
+                                    0,
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                type: 'bar'
+            },
+            {
+                label: 'Fase 3',
+                data: [
+                    {% for month in months %}
+                        {% with month|lower as month %}
+                            {% with month=phase_month_counts|dict_key:month %}
+                                {% if month %}
+                                    {{ month|get_phase_count:'Fase 3' }},
+                                {% else %}
+                                    0,
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 206, 86, 1)',
+                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                type: 'bar'
+            }
+        ]
+    };
+
+    // Configuración y creación del gráfico de barras y líneas - Comparación mes a mes
+    const barLineCtx = document.getElementById('barLineChart').getContext('2d');
+    const barLineChart = new Chart(barLineCtx, {
+        type: 'bar',
+        data: phaseMonthData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
