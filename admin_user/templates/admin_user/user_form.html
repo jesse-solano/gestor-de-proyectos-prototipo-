@@ -1,0 +1,96 @@
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_create %}Agregar Nuevo Usuario{% else %}Editar Usuario{% endif %} - ProjectFlow
+{% endblock %}
+
+{% block content %}
+<div class="view-header">
+    <h1 class="view-header-title">
+        <i class="bi bi-people-fill text-dark"></i>
+        {% if is_create %}Agregar Nuevo Usuario{% else %}Editar Usuario{% endif %}
+    </h1>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mx-auto" style="max-width: 750px;">
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">POO:</label>
+            {{ form.poo }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Nombre de Usuario:</label>
+            {{ form.username }}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Nombre(s):</label>
+                {{ form.first_name }}
+            </div>
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Apellido(s):</label>
+                {{ form.last_name }}
+            </div>
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Correo Electrónico:</label>
+            {{ form.email }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Correo Electrónico Personal:</label>
+            {{ form.personal_email }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Número de Teléfono:</label>
+            {{ form.phone }}
+        </div>
+
+        {% if is_create %}
+        <div class="row">
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Contraseña:</label>
+                {{ form.password }}
+            </div>
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Repetir Contraseña:</label>
+                {{ form.password_confirm }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6 modal-form-row mb-2">
+                <label class="modal-form-label">Rol:</label>
+                {{ form.role }}
+            </div>
+
+            {% if not is_create %}
+            <!-- Checkbox Activo / Inactivo idéntico a Página 5 del PDF -->
+            <div class="col-md-6 mt-3 ps-md-4">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label fw-bold text-dark" for="{{ form.is_active.id_for_label }}">
+                        Activo
+                    </label>
+                </div>
+                <small class="text-muted">Desmarcar para deshabilitar acceso del usuario al sistema.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Botones de Acción (Página 4 y 5) -->
+        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-pf-blue px-4">Guardar</button>
+            <a href="{% url 'user_list' %}" class="btn btn-pf-red px-4">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

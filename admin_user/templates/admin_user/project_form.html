@@ -1,0 +1,107 @@
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_create %}Agregar Nuevo Proyecto{% else %}Editar Proyecto{% endif %} - ProjectFlow
+{% endblock %}
+
+{% block content %}
+<div class="view-header">
+    <h1 class="view-header-title">
+        <i class="bi bi-folder-fill text-dark"></i>
+        {% if is_create %}Agregar Nuevo Proyecto{% else %}Editar Proyecto{% endif %}
+    </h1>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mx-auto" style="max-width: 800px;">
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">ID:</label>
+            {{ form.code }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Nombre del Proyecto:</label>
+            {{ form.name }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Descripción del proyecto:</label>
+            {{ form.description }}
+        </div>
+
+        <div class="modal-form-row mb-3">
+            <label class="modal-form-label">Objetivo del proyecto:</label>
+            {{ form.objective }}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Líder / Propietario:</label>
+                {{ form.owner }}
+            </div>
+            <div class="col-md-6 modal-form-row mb-3">
+                <label class="modal-form-label">Usuario Asignado:</label>
+                {{ form.assigned_user }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Fecha de Inicio:</label>
+                {{ form.start_date }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Fecha de Corte:</label>
+                {{ form.cut_date }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Fecha de Culminación:</label>
+                {{ form.end_date }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Fase:</label>
+                {{ form.phase }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Estado:</label>
+                {{ form.status }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">Estatus:</label>
+                {{ form.estatus }}
+            </div>
+        </div>
+
+        <div class="row align-items-center">
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">% Plan:</label>
+                {{ form.planned_percentage }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3">
+                <label class="modal-form-label">% Real:</label>
+                {{ form.real_percentage }}
+            </div>
+            <div class="col-md-4 modal-form-row mb-3 pt-4">
+                <div class="form-check">
+                    {{ form.procura }}
+                    <label class="form-check-label fw-bold" for="{{ form.procura.id_for_label }}">
+                        Procura Activa
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones (Página 9: Guardar / Cancelar) -->
+        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-pf-blue px-4">Guardar</button>
+            <a href="{% url 'project_list' %}" class="btn btn-pf-red px-4">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

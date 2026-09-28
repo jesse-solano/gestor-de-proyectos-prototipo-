@@ -1,30 +1,46 @@
-from django.urls import path # Importa la función path para definir rutas de URL
-from .views import CustomLoginView, admin_dashboard # Importa vistas específicas de la aplicación
-from .views import create_project 
-from .views import user_project_list, edit_project, report_view
-from django.contrib.auth import views as auth_views # Importa las vistas de autenticación de Django
+"""
+Rutas de la aplicación admin_user (ProjectFlow).
+"""
 
-# Definición de las rutas de URL para la aplicación
+from django.urls import path
+from . import views
+
 urlpatterns = [
-    # Ruta para el inicio de sesión personalizado
-    path('login/', CustomLoginView.as_view(), name='login'),
-    
-    # Ruta para el panel de administración
-    path('admin_dashboard/', admin_dashboard, name='admin_dashboard'),
-    
-    # Ruta para la creación de proyectos
-    path('projects/create/', create_project, name='create_project'),
-    
-    # Ruta para la lista de proyectos del usuario
-    path('projects/', user_project_list, name='user_project_list'),
-    
-    # Ruta para la edición de un proyecto específico (usando el ID del proyecto)
-    path('projects/edit/<int:project_id>/', edit_project, name='edit_project'),
-    
-    # Ruta para la vista de reportes
-    path('reports/', report_view, name='report_view'),
-    
-    # Ruta para el cierre de sesión
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    
+    # Autenticación
+    path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('guest-login/', views.guest_login_view, name='guest_login'),
+    path('logout/', views.custom_logout_view, name='logout'),
+
+    # Inicio / Bienvenida
+    path('home/', views.home, name='home'),
+
+    # Módulo de Usuarios (Página 3, 4, 5, 6, 7)
+    path('users/', views.user_list, name='user_list'),
+    path('users/create/', views.user_create, name='user_create'),
+    path('users/<int:user_id>/edit/', views.user_edit, name='user_edit'),
+    path('users/<int:user_id>/reset-password/', views.user_reset_password, name='user_reset_password'),
+    path('users/<int:user_id>/details/', views.user_details_json, name='user_details_json'),
+    path('users/<int:user_id>/toggle-block/', views.user_toggle_block, name='user_toggle_block'),
+    path('users/<int:user_id>/delete/', views.user_delete, name='user_delete'),
+
+    # Módulo de Proyectos (Página 8, 9)
+    path('projects/', views.project_list, name='project_list'),
+    path('projects/create/', views.project_create, name='project_create'),
+    path('projects/<int:project_id>/edit/', views.project_edit, name='project_edit'),
+    path('projects/<int:project_id>/delete/', views.project_delete, name='project_delete'),
+
+    # Módulo de Actualización / Estatus (Página 14)
+    path('projects/actualizar/', views.project_actualizar, name='project_actualizar'),
+
+    # Módulo de Entregables
+    path('projects/<int:project_id>/deliverables/', views.deliverable_manage, name='deliverable_manage'),
+    path('deliverables/<int:deliverable_id>/delete/', views.deliverable_delete, name='deliverable_delete'),
+
+    # Módulo de Reportes y Estadísticas (Páginas 10, 11, 12, 15, 16, 17)
+    path('reports/', views.report_view, name='report_view'),
+    path('reports/export-csv/', views.report_export_csv, name='report_export_csv'),
+
+    # Respaldo y Restauración
+    path('backup/', views.backup_data, name='backup_data'),
+    path('restore/', views.restore_data, name='restore_data'),
 ]

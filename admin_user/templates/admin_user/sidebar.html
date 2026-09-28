@@ -1,48 +1,80 @@
-<!-- Carga la biblioteca de etiquetas 'static' para poder utilizar archivos estáticos como imágenes, CSS o JavaScript -->
 {% load static %}
+<aside class="app-sidebar" id="appSidebar">
+    <div>
+        <!-- Cabecera de la Barra Lateral con Logo Marca Blanca -->
+        <div class="sidebar-brand">
+            <a href="{% url 'home' %}" title="ProjectFlow">
+                <img src="{% static 'images/projectflow-logo.svg' %}" alt="ProjectFlow Logo">
+            </a>
+            <button class="sidebar-toggle-btn d-md-none" id="sidebarToggle" aria-label="Toggle Navigation">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
 
-<!-- Contenedor principal de la barra lateral, con clases de flexbox de Bootstrap y estilos personalizados para ancho y altura fijos -->
-<div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="width: 280px; height: 100vh; position: fixed;">
-    <!-- Enlace al inicio del sitio web con el logotipo -->
-    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-        <!-- Imagen del logotipo, cargada desde los archivos estáticos -->
-        <img src="{% static 'images/logo.png' %}" alt="logo" style="width: 100px;">
-    </a>
-    <!-- Línea horizontal de separación -->
-    <hr>
-    <!-- Lista de navegación con enlaces a diferentes vistas -->
-    <ul class="nav nav-pills flex-column mb-auto">
-        <!-- Elemento de navegación activo -->
-        <li class="nav-item">
-            <a href="{% url 'home' %}" class="nav-link active" aria-current="page">
-                Home
-            </a>
-        </li>
-        <!-- Elemento de navegación -->
-        <li>
-            <a href="{% url 'user_project_list' %}" class="nav-link link-dark">
-                Modificar Proyectos
-            </a>
-        </li>
-        <!-- Elemento de navegación -->
-        <li>
-            <a href="{% url 'report_view' %}" class="nav-link link-dark">
-                Reportes
-            </a>
-        </li>
-    </ul>
-    <!-- Línea horizontal de separación -->
-    <hr>
-    <!-- Dropdown para mostrar opciones de autenticación -->
-    <div class="dropdown">
-        <!-- Verifica si el usuario está autenticado -->
+        <!-- Menú de Navegación con Borde Activo Verde Neón según Mockups del PDF -->
+        <ul class="sidebar-nav">
+            <li class="sidebar-nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                <a href="{% url 'home' %}">
+                    <span class="sidebar-nav-icon"><i class="bi bi-house-door-fill"></i></span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+
+            {% if user.is_authenticated and user.is_admin_role %}
+            <li class="sidebar-nav-item {% if request.resolver_match.url_name in 'user_list,user_create,user_edit,user_reset_password' %}active{% endif %}">
+                <a href="{% url 'user_list' %}">
+                    <span class="sidebar-nav-icon"><i class="bi bi-people-fill"></i></span>
+                    <span>Usuarios</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="sidebar-nav-item {% if request.resolver_match.url_name in 'project_list,project_create,project_edit,deliverable_manage' %}active{% endif %}">
+                <a href="{% url 'project_list' %}">
+                    <span class="sidebar-nav-icon"><i class="bi bi-folder-fill"></i></span>
+                    <span>Gestión de Proyectos</span>
+                </a>
+            </li>
+
+            <li class="sidebar-nav-item {% if request.resolver_match.url_name == 'project_actualizar' %}active{% endif %}">
+                <a href="{% url 'project_actualizar' %}">
+                    <span class="sidebar-nav-icon"><i class="bi bi-arrow-repeat"></i></span>
+                    <span>Actualizar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-nav-item {% if request.resolver_match.url_name == 'report_view' %}active{% endif %}">
+                <a href="{% url 'report_view' %}">
+                    <span class="sidebar-nav-icon"><i class="bi bi-graph-up"></i></span>
+                    <span>Reportes</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Pie de Barra Lateral: Info de Usuario y Cerrar Sesión -->
+    <div class="sidebar-footer">
         {% if user.is_authenticated %}
-            <!-- Muestra el nombre de usuario autenticado y un botón para cerrar sesión -->
-            <p class="mb-1">Logged in as: <strong>{{ user.username }}</strong></p>
-            <a href="{% url 'logout' %}" class="btn btn-danger w-100">Logout</a>
+            <div class="d-flex align-items-center gap-2 mb-3 px-2">
+                <div class="user-avatar-circle" style="background-color: {{ user.avatar_color|default:'#FA5C3C' }};">
+                    {{ user.initials }}
+                </div>
+                <div class="overflow-hidden">
+                    <div class="fw-bold text-truncate" style="font-size: 0.88rem;">{{ user.full_name_or_username }}</div>
+                    <span class="role-badge {{ user.role_badge_class }}" style="min-width: auto; padding: 2px 8px; font-size: 0.72rem;">
+                        {{ user.role }}
+                    </span>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar-logout-btn">
+                <i class="bi bi-box-arrow-left fs-5"></i>
+                <span>Cerrar sesión</span>
+            </a>
         {% else %}
-            <!-- Muestra un botón para iniciar sesión si el usuario no está autenticado -->
-            <a href="{% url 'login' %}" class="btn btn-primary w-100">Login</a>
+            <a href="{% url 'login' %}" class="btn btn-pf-blue w-100 justify-content-center">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Iniciar sesión</span>
+            </a>
         {% endif %}
     </div>
-</div>
+</aside>

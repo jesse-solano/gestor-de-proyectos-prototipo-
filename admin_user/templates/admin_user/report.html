@@ -1,257 +1,519 @@
-{% extends "admin_user/base.html" %} <!-- Extiende la plantilla base ubicada en 'admin_user/base.html' -->
-{% load widget_tweaks %} <!-- Carga la biblioteca de etiquetas 'widget_tweaks' para modificar widgets de formularios -->
-{% load custom_filters %} <!-- Carga la biblioteca de etiquetas 'custom_filters' para usar filtros personalizados -->
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}Reportes y Dashboards - ProjectFlow{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js 4 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block content %}
-<!-- Incluye la barra lateral -->
-{% include 'admin_user/sidebar.html' %}
-<div class="container mt-5">
-    <div class="content">
-        <!-- Título principal de la página -->
-        <h1 class="mb-4">Reportes de Proyectos</h1>
-        
-        <!-- Formulario de filtros para los reportes -->
-        <form method="get" class="row g-3 mb-4">
-            <div class="col-md-2">
-                <label for="phase" class="form-label">Fase</label>
-                <!-- Campo de selección para la fase del proyecto -->
-                {{ filter_form.phase|add_class:'form-select' }}
+<!-- Cabecera de la Vista con Temporizador y Descarga (Páginas 10, 15 del PDF) -->
+<div class="view-header">
+    <div class="countdown-banner">
+        <i class="bi bi-stopwatch-fill fs-5"></i>
+        <span>Tiempo restante para el corte: <strong id="liveCountdown">89:00:00</strong></span>
+    </div>
+
+    <h1 class="view-header-title text-center mx-auto my-0">
+        <i class="bi bi-graph-up text-dark"></i> Reportes
+    </h1>
+
+    <div>
+        <a href="{% url 'report_export_csv' %}" class="btn btn-pf-blue">
+            <i class="bi bi-download"></i> Descarga de informe
+        </a>
+    </div>
+</div>
+
+<!-- ===========================================================================
+     SECCIÓN DE FILTROS AVANZADOS (Páginas 10 y 15 del PDF)
+     =========================================================================== -->
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-funnel-fill text-primary"></i> Filtros de Proyectos</h5>
+        <div class="search-input-pill">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="reportSearch" placeholder="Buscar proyecto en tabla..." onkeyup="filterReportTable()">
+        </div>
+    </div>
+
+    <form method="GET" action="{% url 'report_view' %}" id="reportFiltersForm">
+        <div class="report-filter-grid">
+            <!-- Líderes -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">Líderes</div>
+                {% for leader in leaders %}
+                    <a href="?leader={{ leader.username }}" class="filter-pill-option {% if selected_leader == leader.username %}active{% endif %}">
+                        {{ leader.first_name }} {{ leader.last_name|slice:":1" }}.
+                    </a>
+                {% endfor %}
             </div>
-            <div class="col-md-2">
-                <label for="status" class="form-label">Estado</label>
-                <!-- Campo de selección para el estado del proyecto -->
-                {{ filter_form.status|add_class:'form-select' }}
+
+            <!-- Fases -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">Fases</div>
+                <a href="?phase=Factibilizacion" class="filter-pill-option {% if selected_phase == 'Factibilizacion' %}active{% endif %}">
+                    Factibilización
+                </a>
+                <a href="?phase=Planificacion" class="filter-pill-option {% if selected_phase == 'Planificacion' %}active{% endif %}">
+                    Planificación
+                </a>
+                <a href="?phase=Ejecucion" class="filter-pill-option {% if selected_phase == 'Ejecucion' %}active{% endif %}">
+                    Ejecución
+                </a>
             </div>
-            <div class="col-md-2">
-                <label for="estatus" class="form-label">Estatus</label>
-                <!-- Campo de selección para el estatus del proyecto -->
-                {{ filter_form.estatus|add_class:'form-select' }}
+
+            <!-- Estados -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">Estado</div>
+                <a href="?status=Activo" class="filter-pill-option {% if selected_status == 'Activo' %}active{% endif %}">Activo</a>
+                <a href="?status=Re-planificado" class="filter-pill-option {% if selected_status == 'Re-planificado' %}active{% endif %}">Re-planificado</a>
+                <a href="?status=Reprogramado" class="filter-pill-option {% if selected_status == 'Reprogramado' %}active{% endif %}">Reprogramado</a>
+                <a href="?status=Pausado" class="filter-pill-option {% if selected_status == 'Pausado' %}active{% endif %}">Pausado</a>
+                <a href="?status=Cancelado" class="filter-pill-option {% if selected_status == 'Cancelado' %}active{% endif %}">Cancelado</a>
+                <a href="?status=En cierre" class="filter-pill-option {% if selected_status == 'En cierre' %}active{% endif %}">En cierre</a>
+                <a href="?status=Culminado" class="filter-pill-option {% if selected_status == 'Culminado' %}active{% endif %}">Culminado</a>
+                <a href="?status=PAP OK" class="filter-pill-option {% if selected_status == 'PAP OK' %}active{% endif %}">PAP OK</a>
             </div>
-            <div class="col-md-2">
-                <label for="user" class="form-label">Usuario</label>
-                <!-- Campo de selección para el usuario asignado al proyecto -->
-                {{ filter_form.user|add_class:'form-select' }}
+
+            <!-- Estatus -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">Estatus</div>
+                <a href="?estatus=Por iniciar" class="filter-pill-option {% if selected_estatus == 'Por iniciar' %}active{% endif %}">Por iniciar</a>
+                <a href="?estatus=Adelantado" class="filter-pill-option {% if selected_estatus == 'Adelantado' %}active{% endif %}">Adelantado</a>
+                <a href="?estatus=A tiempo" class="filter-pill-option {% if selected_estatus == 'A tiempo' %}active{% endif %}">A tiempo</a>
+                <a href="?estatus=En alerta" class="filter-pill-option {% if selected_estatus == 'En alerta' %}active{% endif %}">En alerta</a>
+                <a href="?estatus=En riesgo" class="filter-pill-option {% if selected_estatus == 'En riesgo' %}active{% endif %}">En riesgo</a>
+                <a href="?estatus=Sin plan" class="filter-pill-option {% if selected_estatus == 'Sin plan' %}active{% endif %}">Sin plan</a>
+                <a href="?estatus=Cerrado" class="filter-pill-option {% if selected_estatus == 'Cerrado' %}active{% endif %}">Cerrado</a>
+                <a href="?estatus=Suspendido" class="filter-pill-option {% if selected_estatus == 'Suspendido' %}active{% endif %}">Suspendido</a>
             </div>
-            <div class="col-md-1">
-                <label for="month" class="form-label">Mes</label>
-                <!-- Campo de selección para el mes -->
-                {{ filter_form.month|add_class:'form-select' }}
+
+            <!-- PMO -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">PMO</div>
+                {% for pmo in pmos %}
+                    <a href="?pmo={{ pmo.username }}" class="filter-pill-option {% if selected_pmo == pmo.username %}active{% endif %}">
+                        {{ pmo.first_name }} {{ pmo.last_name|slice:":1" }}.
+                    </a>
+                {% endfor %}
             </div>
-            <div class="col-md-1">
-                <label for="year" class="form-label">Año</label>
-                <!-- Campo de selección para el año -->
-                {{ filter_form.year|add_class:'form-select' }}
+
+            <!-- Mes y Año -->
+            <div class="filter-category-card">
+                <div class="filter-category-title">Mes</div>
+                <a href="?month=1" class="filter-pill-option {% if selected_month == '1' %}active{% endif %}">Ene</a>
+                <a href="?month=2" class="filter-pill-option {% if selected_month == '2' %}active{% endif %}">Feb</a>
+                <a href="?month=3" class="filter-pill-option {% if selected_month == '3' %}active{% endif %}">Mar</a>
             </div>
-            <div class="col-md-2 align-self-end">
-                <!-- Botón para aplicar los filtros -->
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+
+            <div class="filter-category-card">
+                <div class="filter-category-title">Año</div>
+                <a href="?year=2024" class="filter-pill-option {% if selected_year == '2024' %}active{% endif %}">2024</a>
+                <a href="?year=2023" class="filter-pill-option {% if selected_year == '2023' %}active{% endif %}">2023</a>
             </div>
-        </form>
-        
-        <!-- Tabla de lista de proyectos -->
-        <h2 class="mb-4">Lista de Proyectos</h2>
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
+        </div>
+        {% if selected_phase or selected_status or selected_estatus or selected_leader or selected_pmo or selected_month or selected_year %}
+            <div class="text-end">
+                <a href="{% url 'report_view' %}" class="btn btn-sm btn-outline-danger rounded-pill">
+                    <i class="bi bi-x-circle"></i> Limpiar filtros
+                </a>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- ===========================================================================
+     TABLA DE PROYECTOS (Páginas 10 y 15 del PDF)
+     =========================================================================== -->
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <h5 class="fw-bold mb-3 text-center">Proyectos ({{ total_count }})</h5>
+    <div class="pf-table-wrapper" style="max-height: 280px;">
+        <table class="pf-table" id="reportProjectsTable">
+            <thead>
                 <tr>
-                    <th>ID</th>
+                    <th style="width: 180px;">ID</th>
                     <th>Nombre</th>
-                    <th>Porcentaje Real</th>
+                    <th style="width: 150px; text-align: center;">Porcentaje</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Itera sobre la lista de proyectos y muestra su información -->
-                {% for project in projects %}
+                {% for p in projects %}
                 <tr>
-                    <td>{{ project.id }}</td>
-                    <td>{{ project.name }}</td>
-                    <td>{{ project.real_percentage }}</td>
+                    <td><strong>{{ p.display_id }}</strong></td>
+                    <td>{{ p.name }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge bg-primary px-3 py-1">{{ p.real_percentage }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center py-3 text-muted">No hay proyectos para el criterio seleccionado.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        
-        <!-- Resumen de datos -->
-        <h2 class="mb-4">Resumen de Datos</h2>
-        <div class="row">
-            <div class="col-md-4">
-                <h4>Conteo de Fases</h4>
-                <ul class="list-group">
-                    <!-- Itera sobre los conteos de fases y muestra su información -->
-                    {% for phase in phase_counts %}
-                    <li class="list-group-item">{{ phase.phase }}: {{ phase.count }}</li>
-                    {% endfor %}
-                    <!-- Muestra el total de todas las fases -->
-                    <li class="list-group-item list-group-item-info">Total: {{ total_phase }}</li>
-                </ul>
-            </div>
-            <div class="col-md-4">
-                <h4>Conteo de Estados</h4>
-                <ul class="list-group">
-                    <!-- Itera sobre los conteos de estados y muestra su información -->
-                    {% for status in status_counts %}
-                    <li class="list-group-item">{{ status.status }}: {{ status.count }}</li>
-                    {% endfor %}
-                    <!-- Muestra el total de todos los estados -->
-                    <li class="list-group-item list-group-item-info">Total: {{ total_status }}</li>
-                </ul>
-            </div>
-            <div class="col-md-4">
-                <h4>Conteo de Estatus</h4>
-                <ul class="list-group">
-                    <!-- Itera sobre los conteos de estatus y muestra su información -->
-                    {% for estatus in estatus_counts %}
-                    <li class="list-group-item">{{ estatus.estatus }}: {{ estatus.count }}</li>
-                    {% endfor %}
-                    <!-- Muestra el total de todos los estatus -->
-                    <li class="list-group-item list-group-item-info">Total: {{ total_estatus }}</li>
-                </ul>
-            </div>
-        </div>
+    </div>
+</div>
 
-        <!-- Sección de estadísticas y gráficos -->
-        <h2 class="mb-4">Estadísticas</h2>
-        <div class="row">
-            <div class="col-md-6">
-                <!-- Lienzo para el gráfico de barras -->
-                <canvas id="barChart"></canvas>
+<!-- ===========================================================================
+     RESÚMENES ESTADÍSTICOS (Páginas 11 y 16 del PDF)
+     =========================================================================== -->
+<div class="row g-3 mb-4">
+    <!-- Tabla Resumen: FASE -->
+    <div class="col-lg-4">
+        <div class="stat-summary-card">
+            <div class="stat-summary-header">Fase</div>
+            <div class="table-responsive">
+                <table class="stat-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Factibilización</th>
+                            <th>Planificación</th>
+                            <th>Ejecución</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>38</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="col-md-6">
-                <!-- Lienzo para el gráfico de pastel -->
-                <canvas id="pieChart"></canvas>
+            <div class="stat-summary-footer">57</div>
+        </div>
+    </div>
+
+    <!-- Tabla Resumen: ESTADO -->
+    <div class="col-lg-8">
+        <div class="stat-summary-card">
+            <div class="stat-summary-header">Estado</div>
+            <div class="table-responsive">
+                <table class="stat-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Activo</th>
+                            <th>Re-planificado</th>
+                            <th>Reprogramado</th>
+                            <th>Pausado</th>
+                            <th>Cancelado</th>
+                            <th>En cierre</th>
+                            <th>Culminado</th>
+                            <th>PAP OK</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>20</td>
+                            <td>2</td>
+                            <td>3</td>
+                            <td>3</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>17</td>
+                            <td>1</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="col-md-12">
-                <!-- Lienzo para el gráfico de barras y líneas -->
-                <canvas id="barLineChart"></canvas>
+            <div class="stat-summary-footer">57</div>
+        </div>
+    </div>
+
+    <!-- Tabla Resumen: ESTATUS (Ancho Completo) -->
+    <div class="col-12">
+        <div class="stat-summary-card">
+            <div class="stat-summary-header">Estatus</div>
+            <div class="table-responsive">
+                <table class="stat-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Plan en Construcción</th>
+                            <th>Por Iniciar</th>
+                            <th>Adelantado</th>
+                            <th>A Tiempo</th>
+                            <th>En Alerta</th>
+                            <th>En riesgo</th>
+                            <th>Suspendido</th>
+                            <th>Sin Plan</th>
+                            <th>Cancelado</th>
+                            <th>Cerrado</th>
+                            <th>Sin indicador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>6</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>19</td>
+                            <td>5</td>
+                            <td>3</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>17</td>
+                            <td>0</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+            <div class="stat-summary-footer">57</div>
         </div>
     </div>
 </div>
 
-<!-- Incluye Chart.js para generar gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- ===========================================================================
+     GRÁFICOS ESTADÍSTICOS (Páginas 12 y 17 del PDF)
+     =========================================================================== -->
+<div class="row g-4 mb-4">
+    <!-- Gráfico 1: Barras FASE -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold text-center mb-3">FASE (Barras)</h5>
+            <div style="position: relative; height: 260px;">
+                <canvas id="phaseBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico 2: Torta / Donut FASE -->
+    <div class="col-lg-5 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">FASE (Distribución)</h5>
+                <span class="badge bg-secondary">Total: 57</span>
+            </div>
+            <div style="position: relative; height: 260px;">
+                <canvas id="phasePieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selector de Tipos de Reportes (Páginas 12 y 17) -->
+    <div class="col-lg-3 col-md-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-light">
+            <h5 class="fw-bold text-center mb-3">Tipos de reportes</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repSemanal" checked>
+                    <label class="form-check-label fw-bold" for="repSemanal">Reporte Semanal</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repQuincenal">
+                    <label class="form-check-label fw-bold" for="repQuincenal">Reporte Quincenal</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repMensual">
+                    <label class="form-check-label fw-bold" for="repMensual">Reporte Mensual</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repTrimestral">
+                    <label class="form-check-label fw-bold" for="repTrimestral">Reporte Trimestral</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repSemestral">
+                    <label class="form-check-label fw-bold" for="repSemestral">Reporte Semestral</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="reportType" id="repAnual">
+                    <label class="form-check-label fw-bold" for="repAnual">Reporte Anual</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico 3: Comportamiento Enero - Noviembre (Páginas 12 y 17) -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h4 class="fw-bold text-center mb-4">Comportamiento Enero - Noviembre</h4>
+            <div style="position: relative; height: 350px;">
+                <canvas id="monthlyBehaviorChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    // Datos para los gráficos
-    const phaseData = {
-        labels: ['Fase 1', 'Fase 2', 'Fase 3'],
-        datasets: [{
-            label: 'Conteo de Fases',
-            data: [
-                {% for phase in phase_counts %}
-                    {{ phase.count }},
-                {% endfor %}
-            ],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)'
-            ],
-            borderWidth: 1
-        }]
-    };
+    // 1. Contador Regresivo (Tiempo restante para el corte)
+    let totalSeconds = 89 * 3600;
+    function updateCountdown() {
+        if (totalSeconds > 0) totalSeconds--;
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const formatted = 
+            String(hours).padStart(2, '0') + ':' + 
+            String(minutes).padStart(2, '0') + ':' + 
+            String(seconds).padStart(2, '0');
+        const el = document.getElementById('liveCountdown');
+        if (el) el.innerText = formatted;
+    }
+    setInterval(updateCountdown, 1000);
 
-    // Configuración y creación del gráfico de barras
-    const barCtx = document.getElementById('barChart').getContext('2d');
-    const barChart = new Chart(barCtx, {
-        type: 'bar',
-        data: phaseData,
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+    // 2. Filtro en vivo para la tabla de proyectos del reporte
+    function filterReportTable() {
+        const input = document.getElementById('reportSearch');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('reportProjectsTable');
+        const trs = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < trs.length; i++) {
+            const tdId = trs[i].getElementsByTagName('td')[0];
+            const tdName = trs[i].getElementsByTagName('td')[1];
+            if (tdId || tdName) {
+                const txtValue = (tdId.textContent || tdId.innerText) + ' ' + (tdName.textContent || tdName.innerText);
+                trs[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
             }
         }
-    });
+    }
 
-    // Configuración y creación del gráfico de pastel
-    const pieCtx = document.getElementById('pieChart').getContext('2d');
-    const pieChart = new Chart(pieCtx, {
-        type: 'pie',
-        data: phaseData,
-    });
+    // 3. Gráficos Chart.js
+    document.addEventListener('DOMContentLoaded', function() {
+        // Datos para Fases
+        const phaseLabels = ['Factibilización', 'Planificación', 'Ejecución'];
+        const phaseData = [16, 4, 37]; // Valores exactos de Página 12 y 17
 
-    // Datos para el gráfico de barras y líneas
-    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const phaseMonthData = {
-        labels: months,
-        datasets: [
-            {
-                label: 'Fase 1',
-                data: [
-                    {% for month in months %}
-                        {% with month|lower as month %}
-                            {% with month=phase_month_counts|dict_key:month %}
-                                {% if month %}
-                                    {{ month|get_phase_count:'Fase 1' }},
-                                {% else %}
-                                    0,
-                                {% endif %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endfor %}
-                ],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                type: 'bar'
+        // A. Bar Chart: FASE
+        new Chart(document.getElementById('phaseBarChart'), {
+            type: 'bar',
+            data: {
+                labels: phaseLabels,
+                datasets: [{
+                    label: 'Proyectos',
+                    data: phaseData,
+                    backgroundColor: ['#84CC16', '#EF4444', '#06B6D4'],
+                    borderRadius: 6
+                }]
             },
-            {
-                label: 'Fase 2',
-                data: [
-                    {% for month in months %}
-                        {% with month|lower as month %}
-                            {% with month=phase_month_counts|dict_key:month %}
-                                {% if month %}
-                                    {{ month|get_phase_count:'Fase 2' }},
-                                {% else %}
-                                    0,
-                                {% endif %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endfor %}
-                ],
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                type: 'bar'
-            },
-            {
-                label: 'Fase 3',
-                data: [
-                    {% for month in months %}
-                        {% with month|lower as month %}
-                            {% with month=phase_month_counts|dict_key:month %}
-                                {% if month %}
-                                    {{ month|get_phase_count:'Fase 3' }},
-                                {% else %}
-                                    0,
-                                {% endif %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endfor %}
-                ],
-                borderColor: 'rgba(255, 206, 86, 1)',
-                backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                type: 'bar'
-            }
-        ]
-    };
-
-    // Configuración y creación del gráfico de barras y líneas - Comparación mes a mes
-    const barLineCtx = document.getElementById('barLineChart').getContext('2d');
-    const barLineChart = new Chart(barLineCtx, {
-        type: 'bar',
-        data: phaseMonthData,
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 40,
+                        ticks: { stepSize: 5 }
+                    }
                 }
             }
-        }
+        });
+
+        // B. Pie Chart: FASE (Distribución con colores del PDF)
+        new Chart(document.getElementById('phasePieChart'), {
+            type: 'pie',
+            data: {
+                labels: phaseLabels,
+                datasets: [{
+                    data: phaseData,
+                    backgroundColor: ['#84CC16', '#DC2626', '#06B6D4'],
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 14, font: { weight: 'bold' } }
+                    }
+                }
+            }
+        });
+
+        // C. Gráfico Combinado Mensual: Comportamiento Enero - Noviembre
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre'];
+        
+        new Chart(document.getElementById('monthlyBehaviorChart'), {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Total',
+                        data: [24, 24, 25, 26, 27, 27, 30, 30, 31, 33, 35],
+                        borderColor: '#EF4444',
+                        backgroundColor: '#EF4444',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'En Curso',
+                        data: [17, 14, 12, 14, 15, 14, 15, 14, 15, 15, 15],
+                        backgroundColor: '#06B6D4',
+                        stack: 'combined'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Pausado',
+                        data: [2, 6, 7, 7, 6, 7, 4, 4, 4, 4, 3],
+                        backgroundColor: '#F59E0B',
+                        stack: 'combined'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'En Cierre (PAP OK)',
+                        data: [5, 4, 5, 4, 4, 4, 8, 9, 9, 8, 3],
+                        backgroundColor: '#10B981',
+                        stack: 'combined'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Culminados',
+                        data: [0, 0, 1, 1, 2, 2, 3, 3, 3, 6, 12],
+                        backgroundColor: '#0284C7',
+                        stack: 'combined'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Cancelado',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+                        backgroundColor: '#8B5CF6',
+                        stack: 'combined'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 40,
+                        ticks: { stepSize: 5 }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 14, font: { weight: '600' } }
+                    }
+                }
+            }
+        });
     });
 </script>
 {% endblock %}

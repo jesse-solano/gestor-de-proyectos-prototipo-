@@ -1,0 +1,150 @@
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}Entregables - {{ project.code }} - ProjectFlow{% endblock %}
+
+{% block content %}
+<div class="view-header">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{% url 'project_list' %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left"></i> Volver a Proyectos
+        </a>
+        <h1 class="view-header-title m-0">
+            <i class="bi bi-list-check text-dark"></i> Entregables de {{ project.code }}
+        </h1>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-light">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h4 class="fw-bold mb-1">{{ project.name }}</h4>
+            <p class="text-muted mb-0 small">{{ project.description|default:"Sin descripción ampliada." }}</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-secondary me-2">{{ project.phase }}</span>
+            <span class="badge bg-primary me-2">{{ project.status }}</span>
+            <span class="badge bg-success">Avance: {{ project.real_percentage }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Lista de Entregables -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-card-checklist text-primary"></i> Entregables Registrados
+            </h5>
+            <div class="pf-table-wrapper">
+                <table class="pf-table">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Fase</th>
+                            <th>Avance</th>
+                            <th>Estado</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in deliverables %}
+                        <tr>
+                            <td>
+                                <strong>{{ d.title }}</strong>
+                                {% if d.due_date %}
+                                    <small class="text-muted d-block">Límite: {{ d.due_date|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary">{{ d.phase }}</span></td>
+                            <td style="min-width: 120px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: {{ d.progress }}%;"></div>
+                                    </div>
+                                    <span class="small fw-bold">{{ d.progress }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if d.is_completed %}
+                                    <span class="badge bg-success">Completado</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'deliverable_delete' d.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar entregable?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                No hay entregables registrados aún para este proyecto.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario para Agregar Nuevo Entregable -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle-fill text-success"></i> Agregar Nuevo Entregable
+            </h5>
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="modal-form-row mb-3">
+                    <label class="modal-form-label">Título del Entregable:</label>
+                    {{ form.title }}
+                </div>
+
+                <div class="modal-form-row mb-3">
+                    <label class="modal-form-label">Descripción:</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="modal-form-row mb-3">
+                    <label class="modal-form-label">Fase Asignada:</label>
+                    {{ form.phase }}
+                </div>
+
+                <div class="modal-form-row mb-3">
+                    <label class="modal-form-label">Responsable:</label>
+                    {{ form.assigned_to }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 modal-form-row mb-3">
+                        <label class="modal-form-label">Fecha Límite:</label>
+                        {{ form.due_date }}
+                    </div>
+                    <div class="col-md-6 modal-form-row mb-3">
+                        <label class="modal-form-label">% Avance:</label>
+                        {{ form.progress }}
+                    </div>
+                </div>
+
+                <div class="form-check mb-4">
+                    {{ form.is_completed }}
+                    <label class="form-check-label fw-bold" for="{{ form.is_completed.id_for_label }}">
+                        Entregable Completado
+                    </label>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-pf-blue py-2">
+                        <i class="bi bi-save"></i> Guardar Entregable
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

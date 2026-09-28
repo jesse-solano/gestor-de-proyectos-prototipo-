@@ -1,0 +1,206 @@
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}Actualización de Proyectos - ProjectFlow{% endblock %}
+
+{% block content %}
+<!-- Cabecera de la Vista (Página 14 del PDF) -->
+<div class="view-header">
+    <h1 class="view-header-title">
+        <i class="bi bi-arrow-repeat text-dark"></i> Actualización de Proyectos
+    </h1>
+</div>
+
+<!-- Barra Superior con Botones (Página 14) -->
+<div class="action-toolbar justify-content-between">
+    <div class="d-flex gap-2">
+        <div class="dropdown">
+            <button class="btn btn-pf-blue dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+            <ul class="dropdown-menu dropdown-menu-pf">
+                <li><a class="dropdown-item" href="?">Todas las fases</a></li>
+                {% for ph_val, ph_lbl in phase_choices %}
+                    <li><a class="dropdown-item" href="?phase={{ ph_val }}">{{ ph_lbl }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-pf-blue dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-down-up"></i> Ordenar
+            </button>
+            <ul class="dropdown-menu dropdown-menu-pf">
+                <li><a class="dropdown-item" href="?order=-start_date">Fecha más reciente</a></li>
+                <li><a class="dropdown-item" href="?order=start_date">Fecha más antigua</a></li>
+                <li><a class="dropdown-item" href="?order=-real_percentage">Mayor avance real</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div>
+        <button type="button" class="btn btn-pf-blue px-4" onclick="location.reload();">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Tabla de Seguimiento y Actualización (Página 14) -->
+<div class="pf-table-wrapper">
+    <table class="pf-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th style="text-align: center;">Procura</th>
+                <th style="text-align: center;">%Plan</th>
+                <th style="text-align: center;">%Real</th>
+                <th style="text-align: center;">%Desviación</th>
+                <th>Fase</th>
+                <th>Estado</th>
+                <th>Estatus</th>
+                <th style="text-align: center;">Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in projects %}
+            <tr>
+                <td><strong>{{ p.display_id }}</strong></td>
+                <td>
+                    <div class="fw-bold text-dark">{{ p.name }}</div>
+                    <small class="text-muted">{{ p.assigned_user.full_name_or_username|default:'Sin asignar' }}</small>
+                </td>
+                <td style="text-align: center;">
+                    <!-- Procura Si / No idéntico a Página 14 del PDF -->
+                    <div class="d-inline-flex flex-column align-items-start small text-start">
+                        <label class="d-flex align-items-center gap-1">
+                            <input type="radio" disabled {% if p.procura %}checked{% endif %} class="form-check-input my-0"> Si
+                        </label>
+                        <label class="d-flex align-items-center gap-1">
+                            <input type="radio" disabled {% if not p.procura %}checked{% endif %} class="form-check-input my-0"> No
+                        </label>
+                    </div>
+                </td>
+                <td style="text-align: center;"><span class="fw-bold">{{ p.planned_percentage }}</span></td>
+                <td style="text-align: center;"><span class="fw-bold text-success">{{ p.real_percentage }}</span></td>
+                <td style="text-align: center;"><span class="fw-bold text-danger">{{ p.deviation }}</span></td>
+                <td>
+                    <span class="badge bg-secondary">{{ p.phase }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-primary">{{ p.status }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-info text-dark">{{ p.estatus }}</span>
+                </td>
+                <td style="text-align: center;">
+                    {% if request.user.role != 'Invitado' %}
+                    <button type="button" class="btn btn-sm btn-pf-blue" onclick="openQuickUpdateModal({{ p.id }}, '{{ p.code }}', '{{ p.name|escapejs }}', '{{ p.procura|yesno:'true,false' }}', '{{ p.planned_percentage }}', '{{ p.real_percentage }}', '{{ p.phase }}', '{{ p.status }}', '{{ p.estatus }}')">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    {% else %}
+                    <span class="badge bg-secondary"><i class="bi bi-eye"></i> Solo lectura</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center py-4 text-muted">No hay proyectos para actualizar.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Edición Rápida de Avance y Estatus -->
+<div class="modal fade" id="quickUpdateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-pf-content">
+            <div class="modal-pf-header d-flex justify-content-between align-items-center">
+                <h4 class="m-0 fw-bold">Actualizar Avance de Proyecto</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-pf-body">
+                <form method="POST" action="{% url 'project_actualizar' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="project_id" id="quickProjId">
+
+                    <div class="mb-3">
+                        <div class="fw-bold fs-6" id="quickProjName"></div>
+                        <small class="text-muted" id="quickProjCode"></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="procura" id="quickProcura">
+                            <label class="form-check-label fw-bold" for="quickProcura">
+                                Procura Requerida / Activa
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="modal-form-label">% Planificado:</label>
+                            <input type="text" name="planned_percentage" id="quickPlanned" class="modal-form-input" placeholder="100%">
+                        </div>
+                        <div class="col-6">
+                            <label class="modal-form-label">% Real:</label>
+                            <input type="text" name="real_percentage" id="quickReal" class="modal-form-input" placeholder="100%">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="modal-form-label">Fase:</label>
+                        <select name="phase" id="quickPhase" class="modal-form-input form-select">
+                            {% for ph_val, ph_lbl in phase_choices %}
+                                <option value="{{ ph_val }}">{{ ph_lbl }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="modal-form-label">Estado:</label>
+                        <select name="status" id="quickStatus" class="modal-form-input form-select">
+                            {% for st_val, st_lbl in status_choices %}
+                                <option value="{{ st_val }}">{{ st_lbl }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="modal-form-label">Estatus:</label>
+                        <select name="estatus" id="quickEstatus" class="modal-form-input form-select">
+                            {% for es_val, es_lbl in estatus_choices %}
+                                <option value="{{ es_val }}">{{ es_lbl }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 pt-2 border-top">
+                        <button type="submit" class="btn btn-pf-blue px-4">Guardar Cambios</button>
+                        <button type="button" class="btn btn-pf-red px-4" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openQuickUpdateModal(id, code, name, procura, plan, real, phase, status, estatus) {
+        document.getElementById('quickProjId').value = id;
+        document.getElementById('quickProjCode').innerText = code;
+        document.getElementById('quickProjName').innerText = name;
+        document.getElementById('quickProcura').checked = (procura === 'true');
+        document.getElementById('quickPlanned').value = plan;
+        document.getElementById('quickReal').value = real;
+        document.getElementById('quickPhase').value = phase;
+        document.getElementById('quickStatus').value = status;
+        document.getElementById('quickEstatus').value = estatus;
+        new bootstrap.Modal(document.getElementById('quickUpdateModal')).show();
+    }
+</script>
+{% endblock %}

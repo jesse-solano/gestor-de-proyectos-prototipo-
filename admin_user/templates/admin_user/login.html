@@ -1,36 +1,73 @@
-<!-- admin_user/templates/admin_user/login.html -->
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <!-- Metadatos del documento -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Título del documento -->
-    <title>Login</title>
-    <!-- Enlace al CSS de Bootstrap para estilos predeterminados -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Inicio de sesión - ProjectFlow</title>
+    <!-- Fuentes Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/projectflow.css' %}">
 </head>
-<body>
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-4">
-            <!-- Título de la sección de login centrado -->
-            <h2 class="text-center">Login</h2>
-            <!-- Formulario de login -->
-            <form method="post">
-                <!-- Token CSRF para la protección contra ataques CSRF -->
-                {% csrf_token %}
-                <!-- Renderiza el formulario como párrafos -->
-                {{ form.as_p }}
-                <!-- Botón para enviar el formulario, con estilo de Bootstrap -->
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">Login</button>
-                </div>
-            </form>
+<body class="login-body-wrapper">
+
+    <div class="login-card-container">
+        <!-- Barra Superior del Card (Página 1 y 2) -->
+        <div class="login-header-bar">
+            <h2>Inicio de sesión</h2>
+            <a href="{% url 'guest_login' %}" class="login-guest-btn">
+                Ingresar como Invitado
+            </a>
+        </div>
+
+        <!-- Alerta de Error con Contador de Intentos (Página 2 del PDF) -->
+        {% if show_error or attempts > 0 %}
+        <div class="login-error-toast" role="alert">
+            <div class="login-error-text">
+                <div class="login-error-title">ERROR de inicio de sesión</div>
+                <div class="login-error-desc">Usuario o contraseña incorrecto, por favor intentelo de nuevo</div>
+            </div>
+            <div class="login-error-count">
+                {{ attempts }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Logo Central ProjectFlow (Marca Blanca) -->
+        <div class="login-logo-banner">
+            <img src="{% static 'images/projectflow-logo.svg' %}" alt="ProjectFlow Logo">
+        </div>
+
+        <!-- Formulario de Inicio de Sesión -->
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <div class="login-form-group">
+                <label for="id_username" class="login-form-label">Usuario</label>
+                {{ form.username }}
+            </div>
+
+            <div class="login-form-group">
+                <label for="id_password" class="login-form-label">Contraseña</label>
+                {{ form.password }}
+            </div>
+
+            <div class="mt-4 pt-2 text-center">
+                <button type="submit" class="btn btn-pf-blue px-5 py-2 fs-6">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Entrar al Sistema
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-4 pt-3 border-top text-center text-muted" style="font-size: 0.8rem;">
+            <span>ProjectFlow Enterprise PMO &bull; Acceso demo: <strong>admin</strong> / <strong>admin123</strong> o como <strong>Invitado</strong></span>
         </div>
     </div>
-</div>
-<!-- Enlace al JS de Bootstrap para funcionalidades interactivas -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

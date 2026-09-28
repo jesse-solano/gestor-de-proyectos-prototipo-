@@ -1,0 +1,357 @@
+{% extends 'admin_user/base.html' %}
+{% load static %}
+
+{% block title %}Usuarios - ProjectFlow{% endblock %}
+
+{% block content %}
+<!-- Cabecera de la Vista (Página 3 del PDF) -->
+<div class="view-header">
+    <h1 class="view-header-title">
+        <i class="bi bi-people-fill text-dark"></i> Usuarios
+    </h1>
+</div>
+
+<!-- Barra de Herramientas y Filtros (Página 3) -->
+<form method="GET" action="{% url 'user_list' %}" class="action-toolbar">
+    <div class="search-input-pill">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search">
+    </div>
+
+    <!-- Filtro por Rol -->
+    <select name="role" class="select-pill" onchange="this.form.submit()">
+        <option value="All" {% if role_filter == 'All' or not role_filter %}selected{% endif %}>Roles : All</option>
+        <option value="Administrador" {% if role_filter == 'Administrador' %}selected{% endif %}>Roles : Administrador</option>
+        <option value="Coordinador" {% if role_filter == 'Coordinador' %}selected{% endif %}>Roles : Coordinador</option>
+        <option value="PMO" {% if role_filter == 'PMO' %}selected{% endif %}>Roles : PMO</option>
+        <option value="Invitado" {% if role_filter == 'Invitado' %}selected{% endif %}>Roles : Invitado</option>
+    </select>
+
+    <!-- Filtro de Acceso -->
+    <select class="select-pill light">
+        <option selected>Access Anytime</option>
+        <option>Last 30 Days</option>
+        <option>Active Today</option>
+    </select>
+
+    <!-- Botón Block (Bloquear seleccionado o acción rápida) -->
+    <button type="button" class="btn-pf-red ms-auto" id="blockBtn" onclick="alert('Selecciona un usuario del menú contextual (...) para cambiar su estado de bloqueo.')">
+        Block
+    </button>
+
+    <!-- Botón + New User (Abre Modal Página 4) -->
+    <button type="button" class="btn-pf-blue" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <i class="bi bi-plus-lg"></i> New User
+    </button>
+</form>
+
+<!-- Tabla de Usuarios (Página 3) -->
+<div class="pf-table-wrapper">
+    <table class="pf-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;"><input type="checkbox" class="form-check-input"></th>
+                <th>Full Name</th>
+                <th>Email Address <i class="bi bi-arrow-down-up small"></i></th>
+                <th>Rol <i class="bi bi-arrow-down-up small"></i></th>
+                <th>Last login <i class="bi bi-arrow-down-up small"></i></th>
+                <th style="width: 60px; text-align: center;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in page_obj %}
+            <tr>
+                <td><input type="checkbox" class="form-check-input"></td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar-circle" style="background-color: {{ u.avatar_color|default:'#EF4444' }};">
+                            {{ u.initials }}
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ u.full_name_or_username }}</div>
+                            <small class="text-muted">@{{ u.username }}</small>
+                            {% if not u.is_active %}
+                                <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">Bloqueado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td>{{ u.email|default:"N/A" }}</td>
+                <td>
+                    <span class="role-badge {{ u.role_badge_class }}">
+                        {{ u.role }}
+                    </span>
+                </td>
+                <td>
+                    {% if u.last_login %}
+                        {{ u.last_login|date:"d/m/y" }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    <div class="dropdown">
+                        <button class="action-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            &hellip;
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-pf">
+                            <li>
+                                <button type="button" class="dropdown-item" onclick="openResetPasswordModal({{ u.id }}, '{{ u.username }}')">
+                                    <i class="bi bi-key text-warning"></i> Reset password
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item" onclick="openEditUserModal({{ u.id }})">
+                                    <i class="bi bi-pencil text-primary"></i> Editar usuario
+                                </button>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'user_toggle_block' u.id %}">
+                                    {% if u.is_active %}
+                                        <i class="bi bi-slash-circle text-danger"></i> Bloquear usuario
+                                    {% else %}
+                                        <i class="bi bi-check-circle text-success"></i> Desbloquear usuario
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'user_delete' u.id %}" onclick="return confirm('¿Seguro que deseas eliminar al usuario {{ u.username }}?');">
+                                    <i class="bi bi-trash"></i> Eliminar usuario
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <button type="button" class="dropdown-item" onclick="openUserDetailsModal({{ u.id }})">
+                                    <i class="bi bi-info-circle text-info"></i> Detalles de usuario
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                    No se encontraron usuarios coincidentes.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginador Inferior (Página 3) -->
+<div class="table-footer">
+    <div class="pagination-pills">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&role={{ role_filter }}&rows={{ per_page }}" class="page-pill-btn">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        {% else %}
+            <span class="page-pill-btn disabled text-muted"><i class="bi bi-chevron-left"></i></span>
+        {% endif %}
+
+        {% for p in page_obj.paginator.page_range %}
+            {% if p == page_obj.number %}
+                <span class="page-pill-btn active">{{ p }}</span>
+            {% elif p <= 4 or p == page_obj.paginator.num_pages %}
+                <a href="?page={{ p }}&q={{ search_query }}&role={{ role_filter }}&rows={{ per_page }}" class="page-pill-btn">{{ p }}</a>
+            {% elif p == 5 and page_obj.paginator.num_pages > 5 %}
+                <span class="page-pill-btn disabled">...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&role={{ role_filter }}&rows={{ per_page }}" class="page-pill-btn">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        {% else %}
+            <span class="page-pill-btn disabled text-muted"><i class="bi bi-chevron-right"></i></span>
+        {% endif %}
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted">Show:</span>
+        <select class="form-select form-select-sm" style="width: 110px; border-radius: var(--pf-radius-pill);" onchange="location = this.value;">
+            <option value="?rows=5&q={{ search_query }}&role={{ role_filter }}" {% if per_page == 5 %}selected{% endif %}>5 rows</option>
+            <option value="?rows=10&q={{ search_query }}&role={{ role_filter }}" {% if per_page == 10 %}selected{% endif %}>10 rows</option>
+            <option value="?rows=25&q={{ search_query }}&role={{ role_filter }}" {% if per_page == 25 %}selected{% endif %}>25 rows</option>
+        </select>
+    </div>
+</div>
+
+<!-- ===========================================================================
+     MODAL 1: AGREGAR NUEVO USUARIO (Página 4 del PDF)
+     =========================================================================== -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-pf-content">
+            <div class="modal-pf-header d-flex justify-content-between align-items-center">
+                <h3 class="modal-title m-0 fw-bold d-flex align-items-center gap-2" id="addUserModalLabel">
+                    <i class="bi bi-people-fill text-dark"></i> Agregar Nuevo Usuario
+                </h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-pf-body">
+                <form method="POST" action="{% url 'user_create' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">POO:</label>
+                            {{ user_form.poo }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Nombre de Usuario:</label>
+                            {{ user_form.username }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Nombre(s):</label>
+                            {{ user_form.first_name }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Apellido(s):</label>
+                            {{ user_form.last_name }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Correo Electrónico:</label>
+                            {{ user_form.email }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Correo Electrónico Personal:</label>
+                            {{ user_form.personal_email }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Número de Teléfono:</label>
+                            {{ user_form.phone }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Rol:</label>
+                            {{ user_form.role }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Contraseña:</label>
+                            {{ user_form.password }}
+                        </div>
+                        <div class="col-md-6 modal-form-row">
+                            <label class="modal-form-label">Repetir Contraseña:</label>
+                            {{ user_form.password_confirm }}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-3 mt-4">
+                        <button type="submit" class="btn btn-pf-blue px-4">Guardar</button>
+                        <button type="button" class="btn btn-pf-red px-4" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===========================================================================
+     MODAL 2: RESET PASSWORD (Página 6 del PDF)
+     =========================================================================== -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-pf-content">
+            <div class="modal-pf-header">
+                <h4 class="m-0 fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-people-fill"></i> Reset Password
+                </h4>
+            </div>
+            <div class="modal-pf-body">
+                <div class="bg-secondary text-white py-2 px-3 rounded-pill fw-bold text-center mb-4" id="resetTargetUsername">
+                    Usuario 1
+                </div>
+
+                <form id="resetPasswordForm" method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-form-row mb-3">
+                        <label class="modal-form-label">Nueva Contraseña:</label>
+                        <input type="password" name="new_password" required class="modal-form-input" placeholder="Nueva contraseña">
+                    </div>
+
+                    <!-- Instrucciones de Contraseña Segura (Exactas Página 6) -->
+                    <div class="bg-light p-3 rounded-3 mb-3 border">
+                        <div class="fw-bold small text-dark mb-1">Escriba su nueva contraseña segura.</div>
+                        <div class="small text-muted">
+                            Su contraseña debe incluir:<br>
+                            &bull; Una letra mayúscula y una minúscula como mínimo<br>
+                            &bull; Un carácter especial Mínimo de 8 dígitos
+                        </div>
+                    </div>
+
+                    <div class="modal-form-row mb-4">
+                        <label class="modal-form-label">Repetir Contraseña:</label>
+                        <input type="password" name="confirm_password" required class="modal-form-input" placeholder="Confirmar contraseña">
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3">
+                        <button type="submit" class="btn btn-pf-blue px-4">Guardar</button>
+                        <button type="button" class="btn btn-pf-red px-4" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===========================================================================
+     MODAL 3: DETALLES DE USUARIO (Página 7 del PDF)
+     =========================================================================== -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-pf-content">
+            <div class="modal-pf-header">
+                <h4 class="m-0 fw-bold text-center">Detalles de usuario</h4>
+            </div>
+            <div class="modal-pf-body">
+                <div class="bg-light p-4 rounded-4 border">
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">POO:</strong> <span id="detPoo" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">Nombre:</strong> <span id="detName" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">E-mail empresarial:</strong> <span id="detEmail" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">E-mail personal:</strong> <span id="detPersonalEmail" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">Número de teléfono:</strong> <span id="detPhone" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">Rol:</strong> <span id="detRole" class="text-muted">Cargando...</span></div>
+                    <div class="mb-3"><strong class="d-inline-block" style="width: 160px;">Estado:</strong> <span id="detStatus" class="text-muted">Cargando...</span></div>
+                    <div class="mb-1"><strong class="d-inline-block" style="width: 160px;">Último acceso:</strong> <span id="detLastLogin" class="text-muted">Cargando...</span></div>
+                </div>
+                <div class="text-end mt-4">
+                    <button type="button" class="btn btn-pf-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openResetPasswordModal(userId, username) {
+        document.getElementById('resetTargetUsername').innerText = username;
+        document.getElementById('resetPasswordForm').action = '/admin_user/users/' + userId + '/reset-password/';
+        var modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        modal.show();
+    }
+
+    function openEditUserModal(userId) {
+        window.location.href = '/admin_user/users/' + userId + '/edit/';
+    }
+
+    function openUserDetailsModal(userId) {
+        fetch('/admin_user/users/' + userId + '/details/')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('detPoo').innerText = data.poo;
+                document.getElementById('detName').innerText = data.full_name;
+                document.getElementById('detEmail').innerText = data.email;
+                document.getElementById('detPersonalEmail').innerText = data.personal_email;
+                document.getElementById('detPhone').innerText = data.phone;
+                document.getElementById('detRole').innerText = data.role;
+                document.getElementById('detStatus').innerText = data.is_active ? 'Activo' : 'Inactivo / Bloqueado';
+                document.getElementById('detLastLogin').innerText = data.last_login;
+                var modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+                modal.show();
+            });
+    }
+</script>
+{% endblock %}
